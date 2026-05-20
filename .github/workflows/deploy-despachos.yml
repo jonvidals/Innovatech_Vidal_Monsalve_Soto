@@ -27,9 +27,9 @@ jobs:
 
       - name: Build y Push Despachos
         run: |
-                  # El punto final (.) indica el contexto, y la ruta ./ indica dónde buscar el código
-                  docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
-                  docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos 
+                  # Usar el Dockerfile que está en back-Despachos_SpringBoot y el contexto del proyecto DESPACHO
+                  docker build -f back-Despachos_SpringBoot/Dockerfile -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+                  docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos
 
       - name: Deploy Despachos en EC2 Privada
         run: |
