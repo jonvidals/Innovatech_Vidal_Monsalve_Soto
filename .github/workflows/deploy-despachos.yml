@@ -3,7 +3,7 @@ name: Deploy Backend Despachos
 on:
   push:
     branches:
-      - main
+      - deploy # Cambio según rúbrica (Paso 3 y 4)
     paths:
       - 'back-Despachos_SpringBoot/**'
   workflow_dispatch: 
@@ -27,6 +27,7 @@ jobs:
 
       - name: Build y Push Despachos
         run: |
+          # El punto final (.) indica el contexto, y la ruta después es el path al Dockerfile
           docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos ./back-Despachos_SpringBoot
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos
 
@@ -39,5 +40,5 @@ jobs:
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
               "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos",
               "docker rm -f backend-despachos || true",
-              "docker run -d -p 8080:8080 --name backend-despachos ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos"
+              "docker run -d -p 8080:8080 --name backend-despachos -e SPRING_DATASOURCE_URL=jdbc:mysql://10.0.138.43:3306/db_innovatech ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos"
             ]'
