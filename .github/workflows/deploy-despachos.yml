@@ -27,7 +27,6 @@ jobs:
 
       - name: Build y Push Despachos
         run: |
-          # El punto final (.) indica el contexto, y la ruta después es el path al Dockerfile
           docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos ./back-Despachos_SpringBoot
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos
 
