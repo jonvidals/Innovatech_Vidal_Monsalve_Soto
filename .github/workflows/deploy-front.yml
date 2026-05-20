@@ -5,8 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/**' # Solo se activa si hay cambios en esta carpeta
-
+      - 'frontend/**'
 jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
