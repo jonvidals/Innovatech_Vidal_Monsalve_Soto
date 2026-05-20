@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/**'
+      - 'front_despacho/**'
+  workflow_dispatch:
+
 jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -25,7 +27,7 @@ jobs:
 
       - name: Build y Push Frontend
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest ./frontend
+          docker build -t ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest ./front_despacho
           docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
 
       - name: Deploy en EC2 Pública
