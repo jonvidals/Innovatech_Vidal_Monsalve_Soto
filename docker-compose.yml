@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  innovatech-db:
+    image: mysql:8.0
+    container_name: database-innovatech
+    restart: always
+    environment:
+      # Estos datos deben coincidir con tu application.properties
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db_innovatech
+      MYSQL_USER: user_innovatech
+      MYSQL_PASSWORD: password_innovatech
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql # Aquí se cumple el IE2
+
+volumes:
+  db_data:
+    name: innovatech_data_volume # Volumen nombrado para persistencia
