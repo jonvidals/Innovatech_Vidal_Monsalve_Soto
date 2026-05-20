@@ -3,10 +3,17 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
-FROM openjdk:17-jdk-slim
+
+
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
+
 RUN addgroup --system springuser && adduser --system springuser --ingroup springuser
+
 COPY --from=build /app/target/*.jar app.jar
+
 USER springuser
+
 EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
