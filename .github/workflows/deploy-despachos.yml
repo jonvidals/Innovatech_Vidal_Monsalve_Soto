@@ -27,7 +27,7 @@ jobs:
 
       - name: Build y Push Despachos
         run: |
-                  docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+                  docker build --no-cache -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
                   docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos
 
       - name: Deploy Despachos en EC2 Privada

@@ -27,7 +27,7 @@ jobs:
 
       - name: Build y Push Ventas
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas ./back-Ventas_SpringBoot
+          docker build --no-cache -t ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas back-Ventas_SpringBoot
           docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas
 
       - name: Deploy Ventas en EC2 Privada
