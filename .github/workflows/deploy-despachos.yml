@@ -27,8 +27,9 @@ jobs:
 
       - name: Build y Push Despachos
         run: |
-          docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos ./back-Despachos_SpringBoot
-          docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos
+                  # El punto final (.) indica el contexto, y la ruta ./ indica dónde buscar el código
+                  docker build -t ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos ./back-Despachos_SpringBoot
+                  docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos 
 
       - name: Deploy Despachos en EC2 Privada
         run: |
