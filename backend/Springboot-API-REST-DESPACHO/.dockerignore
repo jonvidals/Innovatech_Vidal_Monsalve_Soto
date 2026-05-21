@@ -1,8 +1,0 @@
-# Solo excluir lo necesario
-target/
-.git/
-.env
-.idea/
-*.log
-*.swp
-*~

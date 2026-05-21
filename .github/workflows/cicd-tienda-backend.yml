@@ -1,0 +1,72 @@
+name: CI/CD - Innovatech Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+jobs:
+  build-push-deploy:
+    name: Build, Push & Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # 2. Configurar credenciales AWS
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 3. Login en Amazon ECR
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Construir imagen Docker back-ventas
+      - name: Build imagen back-ventas
+        run: |
+          docker build -t innovatech-backend-ventas ./backend/back-ventas
+
+      # 5. Construir imagen Docker back-despachos
+      - name: Build imagen back-despachos
+        run: |
+          docker build -t innovatech-backend-despachos ./backend/back-despachos
+
+      # 6. Tag & Push ambas imagenes a ECR
+      # Nota: usamos tags con sufijo para distinguirlas en el mismo repositorio ECR
+      - name: Tag & Push imagenes backend a ECR
+        run: |
+          docker tag innovatech-backend-ventas:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest
+          docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest
+
+          docker tag innovatech-backend-despachos:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest
+          docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest
+
+      # 7. Deploy en EC2-Backend via SSM
+      - name: Deploy Backend en EC2 via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_BACKEND_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --region "${{ secrets.AWS_REGION }}" \
+            --parameters 'commands=[
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest",
+              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest",
+              "docker stop innovatech-ventas || true",
+              "docker rm innovatech-ventas || true",
+              "docker stop innovatech-despachos || true",
+              "docker rm innovatech-despachos || true",
+              "docker run -d --name innovatech-ventas -p 8080:8080 -e DB_HOST=${{ secrets.DB_HOST }} -e DB_USER=root -e DB_PASS=admin123 --restart unless-stopped ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest",
+              "docker run -d --name innovatech-despachos -p 8081:8081 -e DB_HOST=${{ secrets.DB_HOST }} -e DB_USER=root -e DB_PASS=admin123 --restart unless-stopped ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest"
+            ]' \
+            --comment "Deploy innovatech-backend" \
+            --output text

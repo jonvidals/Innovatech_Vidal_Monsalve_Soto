@@ -1,0 +1,27 @@
+version: "3.8" # docker compose backend configurado
+
+
+services:
+  # Backend Ventas (Spring Boot) - Puerto 8080
+  back-ventas:
+    image: ${ECR_REPO_URL_BACKEND_VENTAS}:latest
+    container_name: innovatech-ventas
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASS=${DB_PASS:-admin123}
+    restart: unless-stopped
+
+  # Backend Despachos (Spring Boot) - Puerto 8081
+  back-despachos:
+    image: ${ECR_REPO_URL_BACKEND_DESPACHOS}:latest
+    container_name: innovatech-despachos
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASS=${DB_PASS:-admin123}
+    restart: unless-stopped

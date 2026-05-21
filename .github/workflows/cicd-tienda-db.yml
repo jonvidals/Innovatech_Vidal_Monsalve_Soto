@@ -1,0 +1,60 @@
+name: CI/CD - Innovatech DB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "db/**"
+
+jobs:
+  build-push-deploy:
+    name: Build, Push & Deploy DB
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # 2. Configurar credenciales AWS
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 3. Login en Amazon ECR
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Construir imagen Docker de la DB
+      - name: Build imagen Docker DB
+        run: |
+          docker build -t innovatech-db ./db
+
+      # 5. Tag y Push a ECR
+      - name: Tag & Push imagen DB a ECR
+        run: |
+          docker tag innovatech-db:latest ${{ secrets.ECR_REPO_URL_DB }}:latest
+          docker push ${{ secrets.ECR_REPO_URL_DB }}:latest
+
+      # 6. Deploy en EC2 via SSM
+      - name: Deploy DB en EC2 via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_DB_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --region "${{ secrets.AWS_REGION }}" \
+            --parameters 'commands=[
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull ${{ secrets.ECR_REPO_URL_DB }}:latest",
+              "docker stop innovatech-db || true",
+              "docker rm innovatech-db || true",
+              "docker volume create dbdata || true",
+              "docker run -d --name innovatech-db -p 3306:3306 -v dbdata:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=admin123 -e MYSQL_DATABASE=innovatech --restart unless-stopped ${{ secrets.ECR_REPO_URL_DB }}:latest"
+            ]' \
+            --comment "Deploy innovatech-db" \
+            --output text

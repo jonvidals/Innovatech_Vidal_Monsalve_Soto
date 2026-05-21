@@ -1,0 +1,59 @@
+name: CI/CD - Innovatech Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+
+jobs:
+  build-push-deploy:
+    name: Build, Push & Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # 2. Configurar credenciales AWS
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 3. Login en Amazon ECR
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Construir imagen Docker del Frontend (React + Nginx)
+      - name: Build imagen Docker Frontend
+        run: |
+          docker build -t innovatech-frontend ./frontend
+
+      # 5. Tag & Push a ECR
+      - name: Tag & Push imagen Frontend a ECR
+        run: |
+          docker tag innovatech-frontend:latest ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
+          docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
+
+      # 6. Deploy en EC2-Frontend via SSM
+      - name: Deploy Frontend en EC2 via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_FRONTEND_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --region "${{ secrets.AWS_REGION }}" \
+            --parameters 'commands=[
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest",
+              "docker stop innovatech-frontend || true",
+              "docker rm innovatech-frontend || true",
+              "docker run -d --name innovatech-frontend -p 80:80 --add-host=innovatech-ventas-backend:${{ secrets.BACKEND_EC2_PRIVATE_IP }} --add-host=innovatech-despachos-backend:${{ secrets.BACKEND_EC2_PRIVATE_IP }} --restart unless-stopped ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest"
+            ]' \
+            --comment "Deploy innovatech-frontend" \
+            --output text

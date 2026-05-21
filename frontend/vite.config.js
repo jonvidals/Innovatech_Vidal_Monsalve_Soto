@@ -1,15 +1,15 @@
-import { defineConfig } from 'vite'
+﻿import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
-// https://vitejs.dev/config/
+// En producción (Docker+Nginx) las rutas /api/* son proxeadas por nginx.conf
+// En desarrollo local, se puede usar el proxy de vite
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       '/api': {
-        target: 'https://qic534o8o0.execute-api.us-east-1.amazonaws.com',
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
