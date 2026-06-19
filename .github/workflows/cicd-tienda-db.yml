@@ -38,23 +38,12 @@ jobs:
       # 5. Tag y Push a ECR
       - name: Tag & Push imagen DB a ECR
         run: |
-          docker tag innovatech-db:latest ${{ secrets.ECR_REPO_URL_DB }}:latest
-          docker push ${{ secrets.ECR_REPO_URL_DB }}:latest
+          docker tag innovatech-db:latest ${{ steps.login-ecr.outputs.registry }}/db-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/db-repo:latest
 
-      # 6. Deploy en EC2 via SSM
-      - name: Deploy DB en EC2 via SSM
+      # 6. Deploy en Amazon EKS
+      - name: Deploy DB en EKS
         run: |
-          aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_DB_INSTANCE_ID }}" \
-            --document-name "AWS-RunShellScript" \
-            --region "${{ secrets.AWS_REGION }}" \
-            --parameters 'commands=[
-              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-              "docker pull ${{ secrets.ECR_REPO_URL_DB }}:latest",
-              "docker stop innovatech-db || true",
-              "docker rm innovatech-db || true",
-              "docker volume create dbdata || true",
-              "docker run -d --name innovatech-db -p 3306:3306 -v dbdata:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=admin123 -e MYSQL_DATABASE=innovatech --restart unless-stopped ${{ secrets.ECR_REPO_URL_DB }}:latest"
-            ]' \
-            --comment "Deploy innovatech-db" \
-            --output text
+          aws eks update-kubeconfig --region us-east-1 --name mi-cluster-eks
+          kubectl apply -f k8s-deployment.yaml
+          kubectl rollout restart deployment/innovatech-db-deployment

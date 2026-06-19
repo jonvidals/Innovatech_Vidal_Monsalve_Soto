@@ -41,32 +41,18 @@ jobs:
           docker build -t innovatech-backend-despachos ./backend/back-despachos
 
       # 6. Tag & Push ambas imagenes a ECR
-      # Nota: usamos tags con sufijo para distinguirlas en el mismo repositorio ECR
       - name: Tag & Push imagenes backend a ECR
         run: |
-          docker tag innovatech-backend-ventas:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest
-          docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest
+          docker tag innovatech-backend-ventas:latest ${{ steps.login-ecr.outputs.registry }}/back-ventas-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/back-ventas-repo:latest
 
-          docker tag innovatech-backend-despachos:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest
-          docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest
+          docker tag innovatech-backend-despachos:latest ${{ steps.login-ecr.outputs.registry }}/back-despachos-repo:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/back-despachos-repo:latest
 
-      # 7. Deploy en EC2-Backend via SSM
-      - name: Deploy Backend en EC2 via SSM
+      # 7. Deploy en Amazon EKS
+      - name: Deploy Backend en EKS
         run: |
-          aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_BACKEND_INSTANCE_ID }}" \
-            --document-name "AWS-RunShellScript" \
-            --region "${{ secrets.AWS_REGION }}" \
-            --parameters 'commands=[
-              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest",
-              "docker pull ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest",
-              "docker stop innovatech-ventas || true",
-              "docker rm innovatech-ventas || true",
-              "docker stop innovatech-despachos || true",
-              "docker rm innovatech-despachos || true",
-              "docker run -d --name innovatech-ventas -p 8080:8080 -e DB_HOST=${{ secrets.DB_HOST }} -e DB_USER=root -e DB_PASS=admin123 --restart unless-stopped ${{ secrets.ECR_REPO_URL_BACKEND }}:ventas-latest",
-              "docker run -d --name innovatech-despachos -p 8081:8081 -e DB_HOST=${{ secrets.DB_HOST }} -e DB_USER=root -e DB_PASS=admin123 --restart unless-stopped ${{ secrets.ECR_REPO_URL_BACKEND }}:despachos-latest"
-            ]' \
-            --comment "Deploy innovatech-backend" \
-            --output text
+          aws eks update-kubeconfig --region us-east-1 --name mi-cluster-eks
+          kubectl apply -f k8s-deployment.yaml
+          kubectl rollout restart deployment/innovatech-ventas-deployment
+          kubectl rollout restart deployment/innovatech-despachos-deployment
