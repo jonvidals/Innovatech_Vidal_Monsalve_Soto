@@ -45,6 +45,6 @@ jobs:
       # 6. Deploy en Amazon EKS
       - name: Deploy DB en EKS
         run: |
-          aws eks update-kubeconfig --region us-east-1 --name mi-cluster-eks
+          aws eks update-kubeconfig --region us-east-1 --name mi-cluster-eks2
           kubectl apply -f k8s-deployment.yaml
           kubectl rollout restart deployment/innovatech-db-deployment
