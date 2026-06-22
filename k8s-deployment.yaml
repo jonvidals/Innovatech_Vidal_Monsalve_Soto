@@ -1,4 +1,4 @@
-# ------------------ 1. BASE DE DATOS MYSQL ------------------
+ # ------------------ 1. BASE DE DATOS MYSQL ------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: mysql
-        image: 042001829225.dkr.ecr.us-east-1.amazonaws.com/db-repo:latest
+        image: 469897277417.dkr.ecr.us-east-1.amazonaws.com/db-repo:latest
         ports:
         - containerPort: 3306
         env:
@@ -55,7 +55,7 @@ spec:
     spec:
       containers:
       - name: back-ventas
-        image: 042001829225.dkr.ecr.us-east-1.amazonaws.com/back-ventas-repo:latest
+        image: 469897277417.dkr.ecr.us-east-1.amazonaws.com/back-ventas-repo:latest
         ports:
         - containerPort: 8080
         env:
@@ -104,7 +104,7 @@ spec:
     spec:
       containers:
       - name: back-despachos
-        image: 042001829225.dkr.ecr.us-east-1.amazonaws.com/back-despachos-repo:latest
+        image: 469897277417.dkr.ecr.us-east-1.amazonaws.com/back-despachos-repo:latest
         ports:
         - containerPort: 8081
         env:
@@ -153,7 +153,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 042001829225.dkr.ecr.us-east-1.amazonaws.com/frontend-repo:latest
+        image: 469897277417.dkr.ecr.us-east-1.amazonaws.com/frontend-repo:latest
         ports:
         - containerPort: 80
         resources:
